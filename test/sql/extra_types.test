@@ -1,0 +1,22 @@
+# name: test/sql/extra_types.test
+# description: Vortex round-trip for DuckDB types not supported by the DuckLake catalog
+# group: [vortex]
+
+require vortex
+
+statement ok
+CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy')
+
+statement ok
+COPY (
+	SELECT
+		'happy'::mood AS e,
+		'1010'::BIT AS b,
+		123456789012345678901234567890::BIGNUM AS n
+) TO '__TEST_DIR__/extra_types.vortex' (FORMAT vortex)
+
+query III
+SELECT e::VARCHAR, b::VARCHAR, n::VARCHAR
+FROM read_vortex('__TEST_DIR__/extra_types.vortex')
+----
+happy	1010	123456789012345678901234567890
