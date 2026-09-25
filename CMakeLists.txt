@@ -82,10 +82,28 @@ if(NOT DEFINED VORTEX_VERSION)
     file(READ "${CMAKE_CURRENT_SOURCE_DIR}/vortex-extension/Cargo.toml" VORTEX_TOML)
     string(REGEX MATCH "vortex-duckdb = {[^\n]*rev = \"([0-9a-f]+)\"" VORTEX_REV
            "${VORTEX_TOML}")
-    if(NOT VORTEX_REV)
+    set(VORTEX_GIT_REV "${CMAKE_MATCH_1}")
+    string(REGEX MATCH "vortex-duckdb = {[^\n]*path = \"([^\"]+)\"" VORTEX_PATH
+           "${VORTEX_TOML}")
+    if(VORTEX_PATH)
+        # Local path dependency: stamp the extension with the checkout's HEAD.
+        get_filename_component(VORTEX_LOCAL_DIR "${CMAKE_MATCH_1}"
+                               ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vortex-extension")
+        execute_process(
+            COMMAND git rev-parse HEAD
+            WORKING_DIRECTORY "${VORTEX_LOCAL_DIR}"
+            OUTPUT_VARIABLE VORTEX_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE
+            RESULT_VARIABLE VORTEX_GIT_RESULT
+        )
+        if(NOT (VORTEX_GIT_RESULT EQUAL 0) OR VORTEX_VERSION STREQUAL "")
+            message(FATAL_ERROR "failed resolving VORTEX_VERSION from ${VORTEX_LOCAL_DIR}")
+        endif()
+    elseif(NOT VORTEX_REV)
         message(FATAL_ERROR "no vortex-duckdb in vortex-extension/Cargo.toml")
     endif()
-    set(VORTEX_GIT_REV "${CMAKE_MATCH_1}")
+endif()
+if(NOT DEFINED VORTEX_VERSION)
     execute_process(
         COMMAND git ls-remote --tags "https://github.com/vortex-data/vortex.git"
         OUTPUT_VARIABLE VORTEX_REMOTE_TAGS

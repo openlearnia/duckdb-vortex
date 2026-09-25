@@ -5,10 +5,10 @@
 require vortex
 
 # RED then GREEN: Vortex must support RETURN_STATS with path, count, and positive size
-query IIIIII
+query IIIIIII
 COPY (SELECT * AS number FROM generate_series(0, 10)) TO '__TEST_DIR__/stats.vortex' (FORMAT VORTEX, RETURN_STATS);
 ----
-<REGEX>:.*stats.vortex	11	<REGEX>:[1-9]\d*	0	<REGEX>:.*number.*max=10.*min=0.*null_count=0.*num_values=11.*	NULL
+<REGEX>:.*stats.vortex	11	<REGEX>:[1-9]\d*	0	<REGEX>:.*number.*max=10.*min=0.*null_count=0.*num_values=11.*	NULL	<REGEX>:.*row_group_count.*
 
 query I
 SELECT SUM(number)::BIGINT FROM read_vortex('__TEST_DIR__/stats.vortex');
